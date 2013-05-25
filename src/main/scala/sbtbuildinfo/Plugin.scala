@@ -6,8 +6,11 @@ object Plugin extends sbt.Plugin {
   import Keys._
 
   lazy val buildInfo        = TaskKey[Seq[File]]("buildinfo")
-  lazy val buildInfoObject  = SettingKey[String]("buildinfo-object")
   lazy val buildInfoPackage = SettingKey[String]("buildinfo-package") 
+  lazy val buildInfoPrefix  = SettingKey[String]("buildinfo-prefix")
+  lazy val buildInfoObject  = SettingKey[String]("buildinfo-object")
+  lazy val buildInfoObjectFormat  = SettingKey[String]("buildinfo-object-format")
+  lazy val buildInfoSuffix  = SettingKey[String]("buildinfo-suffix")
   lazy val buildInfoKeys    = SettingKey[Seq[BuildInfoKey.Entry[_]]]("buildinfo-keys")
   lazy val buildInfoBuildNumber = TaskKey[Int]("buildinfo-buildnumber")
 
@@ -48,12 +51,28 @@ object Plugin extends sbt.Plugin {
   type BuildInfoKey = BuildInfoKey.Entry[_]
 
   object BuildInfo {
-    def apply(dir: File, obj: String, pkg: String, keys: Seq[BuildInfoKey],
-        proj: ProjectRef, state: State, cacheDir: File): File =
-      BuildInfoTask(dir, obj, pkg, keys, proj, state, cacheDir).file
+    def apply(
+        dir: File,
+        pkg: String,
+        pfx: String,
+        obj: String,
+        sfx: String,
+        keys: Seq[BuildInfoKey],
+        proj: ProjectRef,
+        state: State,
+        cacheDir: File): File =
+      BuildInfoTask(dir / "sbt-buildinfo", pkg, pfx, obj, sfx, keys, proj, state, cacheDir).file
 
-    private case class BuildInfoTask(dir: File, obj: String, pkg: String, keys: Seq[BuildInfoKey],
-        proj: ProjectRef, state: State, cacheDir: File) {
+    private case class BuildInfoTask(
+        dir: File,
+        pkg: String,
+        pfx: String,
+        obj: String,
+        sfx: String,
+        keys: Seq[BuildInfoKey],
+        proj: ProjectRef,
+        state: State,
+        cacheDir: File) {
       import FileInfo.hash
       import Tracked.inputChanged
 
@@ -80,10 +99,11 @@ object Plugin extends sbt.Plugin {
       def makeFile(file: File): File = {
         val lines =
           List("package %s" format pkg,
-            "",
-            "case object %s {" format obj) :::
+            "", pfx,
+            obj,
+            "{") :::
           (keys.toList.distinct map { line(_) }).flatten :::
-          List("}")
+          List("}", sfx)
         IO.write(file, lines.mkString("\n"))
         file
       }
@@ -167,14 +187,24 @@ object Plugin extends sbt.Plugin {
   }
 
   lazy val buildInfoSettings: Seq[Project.Setting[_]] = Seq(
-    buildInfo <<= (sourceManaged in Compile,
-        buildInfoObject, buildInfoPackage, buildInfoKeys, thisProjectRef, state, cacheDirectory) map {
-      (dir, obj, pkg, keys, ref, state, cacheDir) =>
-      Seq(BuildInfo(dir / "sbt-buildinfo", obj, pkg, keys, ref, state, cacheDir))
+    buildInfo <<= (
+      sourceManaged in Compile,
+      buildInfoPackage, 
+      buildInfoPrefix,
+      buildInfoObject,
+      buildInfoSuffix,
+      buildInfoKeys,
+      thisProjectRef,
+      state,
+      cacheDirectory
+      ) map {      (dir, pkg, pfx, obj, sfx, keys, ref, state, cacheDir) =>
+      Seq(BuildInfo(dir, pkg, pfx, obj, sfx, keys, ref, state, cacheDir))
     },
-    buildInfoObject  := "BuildInfo",
     buildInfoPackage := "buildinfo",
+    buildInfoPrefix  := "",
+    buildInfoObject  := "case object BuildInfo",
     buildInfoKeys    := Seq(name, version, scalaVersion, sbtVersion),
+    buildInfoSuffix  := "",
     buildInfoBuildNumber <<= (baseDirectory) map { (dir) => buildNumberTask(dir, 1) }
   )
 }

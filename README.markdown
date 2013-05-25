@@ -9,7 +9,7 @@ Latest Stable
 -------------
 
 ```scala
-addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.2.4")
+addSbtPlugin("com.eed3si9n" % "sbt-buildinfo" % "0.3.0")
 ```
 
 Usage
@@ -25,6 +25,8 @@ sourceGenerators in Compile <+= buildInfo
 buildInfoKeys := Seq[BuildInfoKey](name, version, scalaVersion, sbtVersion)
 
 buildInfoPackage := "hello"
+
+buildInfoObject := "case object Foo extends Bar"
 ```
 
 (__Note__: in version 0.1.2, this was `Seq[Scoped]` instead!)
@@ -51,7 +53,7 @@ When you reload the settings and compile, this generates the following:
 ```scala
 package hello
 
-object BuildInfo {
+case object Foo extends Bar {
   val name = "helloworld"
   val version = "0.1-SNAPSHOT"
   val scalaVersion = "2.9.2"
