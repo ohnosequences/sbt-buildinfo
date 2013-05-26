@@ -55,18 +55,20 @@ object Plugin extends sbt.Plugin {
         dir: File,
         pkg: String,
         pfx: String,
+        fmt: String,
         obj: String,
         sfx: String,
         keys: Seq[BuildInfoKey],
         proj: ProjectRef,
         state: State,
         cacheDir: File): File =
-      BuildInfoTask(dir / "sbt-buildinfo", pkg, pfx, obj, sfx, keys, proj, state, cacheDir).file
+      BuildInfoTask(dir / "sbt-buildinfo", pkg, pfx, fmt, obj, sfx, keys, proj, state, cacheDir).file
 
     private case class BuildInfoTask(
         dir: File,
         pkg: String,
         pfx: String,
+        fmt: String,
         obj: String,
         sfx: String,
         keys: Seq[BuildInfoKey],
@@ -100,7 +102,7 @@ object Plugin extends sbt.Plugin {
         val lines =
           List("package %s" format pkg,
             "", pfx,
-            obj,
+            fmt format obj,
             "{") :::
           (keys.toList.distinct map { line(_) }).flatten :::
           List("}", sfx)
@@ -191,14 +193,15 @@ object Plugin extends sbt.Plugin {
       sourceManaged in Compile,
       buildInfoPackage, 
       buildInfoPrefix,
+      buildInfoObjectFormat,
       buildInfoObject,
       buildInfoSuffix,
       buildInfoKeys,
       thisProjectRef,
       state,
       cacheDirectory
-      ) map {      (dir, pkg, pfx, obj, sfx, keys, ref, state, cacheDir) =>
-      Seq(BuildInfo(dir, pkg, pfx, obj, sfx, keys, ref, state, cacheDir))
+      ) map {      (dir, pkg, pfx, fmt, obj, sfx, keys, ref, state, cacheDir) =>
+      Seq(BuildInfo(dir, pkg, pfx, fmt, obj, sfx, keys, ref, state, cacheDir))
     },
     buildInfoPackage := "buildinfo",
     buildInfoPrefix  := "",
