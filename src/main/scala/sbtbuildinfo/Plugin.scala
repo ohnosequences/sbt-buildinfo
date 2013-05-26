@@ -205,7 +205,8 @@ object Plugin extends sbt.Plugin {
     },
     buildInfoPackage := "buildinfo",
     buildInfoPrefix  := "",
-    buildInfoObject  := "case object BuildInfo",
+    buildInfoObjectFormat  := "case object %s",
+    buildInfoObject  := "BuildInfo",
     buildInfoKeys    := Seq(name, version, scalaVersion, sbtVersion),
     buildInfoSuffix  := "",
     buildInfoBuildNumber <<= (baseDirectory) map { (dir) => buildNumberTask(dir, 1) }
